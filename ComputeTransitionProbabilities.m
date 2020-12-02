@@ -23,94 +23,95 @@ function P = ComputeTransitionProbabilities(stateSpace, map)
 %           The entry P(i, j, l) represents the transition probability
 %           from state i to state j if control input l is applied.
 
-global GAMMA R P_WIND
-global FREE TREE SHOOTER PICK_UP DROP_OFF BASE
-global NORTH SOUTH EAST WEST HOVER
-global K TERMINAL_STATE_INDEX
+    global GAMMA R P_WIND
+    global FREE TREE SHOOTER PICK_UP DROP_OFF BASE
+    global NORTH SOUTH EAST WEST HOVER
+    global K TERMINAL_STATE_INDEX
 
-% K     : # of states
-% GAMMA : shooter gamma factor
-% R     : shooter range
+    % K     : # of states
+    % GAMMA : shooter gamma factor
+    % R     : shooter range
 
-% bounds of the map
-bounds = size(map);
+    % bounds of the map
+    % bounds(1) = M ; bounds(2) = N ; 
+    bounds = size(map);
 
-% Intented movement of inputs
-%         NORTH   SOUTH    EAST    WEST     HOVER
-inputs = [[0 1] ; [0 -1] ; [1 0] ; [-1 0] ; [0 0]];
+    % Intented movement of inputs
+    %         NORTH   SOUTH    EAST    WEST     HOVER
+    inputs = [[0 1] ; [0 -1] ; [1 0] ; [-1 0] ; [0 0]];
 
-% Matrix of Probability of being shot on every cell.
-% For the step 4 of evoluation of the system. 
-P_BeingShot = ComputeProbabilityOfBeingShot(map);
+    % Matrix of Probability of being shot on every cell.
+    % For the step 4 of evoluation of the system. 
+    P_BeingShot = ComputeProbabilityOfBeingShot(map);
 
-% Position of trees
-[trees_m, trees_n] = ind2sub(size(map), find(map==TREE));
-trees = [trees_m trees_n];
+    % Position of trees
+    [trees_m, trees_n] = ind2sub(size(map), find(map==TREE));
+    trees = [trees_m trees_n];
 
-% Position of the base station
-% Index of the base state 
-% The drone ends up at this state if it crashes. 
-[base_m, base_n] = ind2sub(size(map), find(map==BASE));
-baseIndex = find(ismember(stateSpace, [base_m,base_n,0],'rows'));
+    % Position of the base station
+    % Index of the base state 
+    % The drone ends up at this state if it crashes. 
+    [base_m, base_n] = ind2sub(size(map), find(map==BASE));
+    baseIndex = find(ismember(stateSpace, [base_m,base_n,0],'rows'));
 
-% The state [pickUp_m,pickUp_n,0] will never be visited. 
-% If the previous state does not have package (0) and comes to the pickup 
-% cell in the same time step, the package will be obtained (1). 
+    % The state [pickUp_m,pickUp_n,0] will never be visited. 
+    % If the previous state does not have package (0) and comes to the pickup 
+    % cell in the same time step, the package will be obtained (1). 
 
-% Probability Matrix inilization
-P = zeros(K,K,size(inputs,1));
-% From terminal state the only possible transition 
-P(TERMINAL_STATE_INDEX, TERMINAL_STATE_INDEX, :) = ones(1,length(inputs));
+    % Probability Matrix inilization
+    P = zeros(K,K,size(inputs,1));
+    % From terminal state the only possible transition 
+    P(TERMINAL_STATE_INDEX, TERMINAL_STATE_INDEX, :) = ones(1,length(inputs));
 
-% The entry P(i, j, l) represents the transition probability
-% from state i to state j if control input l is applied.
-% There are maximum 6 possible states that the drone might arrive.
-% Intended cell, cells at NORTH, SOUTH, EAST, WEST of the intended cell and
-% the basestation if it crashed. 
-for l = 1:size(inputs,1)
-    for i = 1:K
-        
-        current_cell = stateSpace(i,1:2);
-        intended_cell= current_cell + inputs(l,:);
-        inputValid   = CheckInputValidity(intended_cell, trees, size(map));
-        
-        % Do the calculation only if the input is valid and the current
-        % state is not the terminal state
-        if inputValid && i ~= TERMINAL_STATE_INDEX 
-            
-            % possibleCells except the intended cell
-            possibleCells = FindPossibleCells(intended_cell, inputs, trees, bounds);
-            numberOfPossibleCells = size(possibleCells,1);
-            
-            % Movements that might result crash due to wind    
-            numberOfCrashMovements = 4 - numberOfPossibleCells;
-            
-            % Add the intended cell to the possibleCells in order to 
-            % calculate possibleStates 
-            possibleCells = [intended_cell ; possibleCells];                                            
-            possibleStates = FindPossibleStates(stateSpace(i,3),possibleCells, map, stateSpace); 
-            
-            % Calculate Probabilities.
-            % p_intended = 1 - p_wind - (1 - p_wind)*p_beingShot
-            p_crash = (1-P_WIND)*P_BeingShot(intended_cell(1), intended_cell(2));
-            P(i,possibleStates(1),l) = 1 - P_WIND - p_crash;
-            
-            % p_possible = p_wind*0.25 - (p_wind*0.25)*p_beingShot
-            for p = 1:numberOfPossibleCells
-                p_shot = P_WIND*0.25*P_BeingShot(possibleCells(p+1));
-                P(i,possibleStates(p+1),l) =  P_WIND*0.25 - p_shot;
-                p_crash = p_crash + p_shot;
-            end
-            
-            % p_base = sum(p_beingShot)+ numberOfCrashMovements*p_wind*0.25
-            p_crash = p_crash + numberOfCrashMovements*P_WIND*0.25;
-            
-            % The base cell might have been visited 
-            P(i,baseIndex,l) = P(i,baseIndex,l) + p_crash;  
+    % The entry P(i, j, l) represents the transition probability
+    % from state i to state j if control input l is applied.
+    % There are maximum 6 possible states that the drone might arrive.
+    % Intended cell, cells at NORTH, SOUTH, EAST, WEST of the intended cell and
+    % the basestation if it crashed. 
+    for l = 1:size(inputs,1)
+        for i = 1:K
 
-        end 
+            current_cell = stateSpace(i,1:2);
+            intended_cell= current_cell + inputs(l,:);
+            inputValid   = CheckInputValidity(intended_cell, trees, bounds);
+
+            % Do the calculation only if the input is valid and the current
+            % state is not the terminal state
+            if inputValid && i ~= TERMINAL_STATE_INDEX 
+
+                % possibleCells except the intended cell
+                possibleCells = FindPossibleCells(intended_cell, inputs, trees, bounds);
+                numberOfPossibleCells = size(possibleCells,1);
+
+                % Movements that might result crash due to wind    
+                numberOfCrashMovements = 4 - numberOfPossibleCells;
+
+                % Add the intended cell to the possibleCells in order to 
+                % calculate possibleStates 
+                possibleCells = [intended_cell ; possibleCells];                                            
+                possibleStates = FindPossibleStates(stateSpace(i,3),possibleCells, map, stateSpace); 
+
+                % Calculate Probabilities.
+                % p_intended = 1 - p_wind - (1 - p_wind)*p_beingShot
+                p_crash = (1-P_WIND)*P_BeingShot(intended_cell(1), intended_cell(2));
+                P(i,possibleStates(1),l) = 1 - P_WIND - p_crash;
+
+                % p_possible = p_wind*0.25 - (p_wind*0.25)*p_beingShot
+                for p = 1:numberOfPossibleCells
+                    p_shot = P_WIND*0.25*P_BeingShot(possibleCells(p+1));
+                    P(i,possibleStates(p+1),l) =  P_WIND*0.25 - p_shot;
+                    p_crash = p_crash + p_shot;
+                end
+
+                % p_base = sum(p_beingShot)+ numberOfCrashMovements*p_wind*0.25
+                p_crash = p_crash + numberOfCrashMovements*P_WIND*0.25;
+
+                % The base cell might have been visited 
+                P(i,baseIndex,l) = P(i,baseIndex,l) + p_crash;  
+
+            end 
+        end
     end
-end
 
 end
 
