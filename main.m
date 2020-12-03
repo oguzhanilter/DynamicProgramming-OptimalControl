@@ -125,14 +125,17 @@ end
 
 G_ = G;
 P_ = P;
+positions = stateSpace(:,1:2);
 
 load('example_G.mat');
 load('example_P.mat');
 
-disp(isequal(G,G_))
-disp(isequal(P,P_))
 
+a = G-G_;
+a(isnan(a)) = 0;
 
+disp(all(all(all(P-P_<1e-10))))
+disp(all(all(all(a<1e-10))))
 
 %% Solve stochastic shortest path problem
 % Solve the stochastic shortest path problem by Value Iteration,

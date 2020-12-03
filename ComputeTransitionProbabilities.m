@@ -98,7 +98,8 @@ function P = ComputeTransitionProbabilities(stateSpace, map)
 
                 % p_possible = p_wind*0.25 - (p_wind*0.25)*p_beingShot
                 for p = 1:numberOfPossibleCells
-                    p_shot = P_WIND*0.25*P_BeingShot(possibleCells(p+1));
+                    cell = possibleCells(p+1,:);
+                    p_shot = P_WIND*0.25*P_BeingShot(cell(1),cell(2));
                     P(i,possibleStates(p+1),l) =  P_WIND*0.25 - p_shot;
                     p_crash = p_crash + p_shot;
                 end
@@ -106,7 +107,7 @@ function P = ComputeTransitionProbabilities(stateSpace, map)
                 % p_base = sum(p_beingShot)+ numberOfCrashMovements*p_wind*0.25
                 p_crash = p_crash + numberOfCrashMovements*P_WIND*0.25;
 
-                % The base cell might have been visited 
+                % The base (station) cell might have been visited 
                 P(i,baseIndex,l) = P(i,baseIndex,l) + p_crash;  
 
             end 

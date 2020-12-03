@@ -31,14 +31,16 @@ function G = ComputeStageCosts(stateSpace, map)
     
     % bounds of the map
     bounds = size(map);
-    
+        
     % Intented movement of inputs
     %         NORTH   SOUTH    EAST    WEST     HOVER
     inputs = [[0 1] ; [0 -1] ; [1 0] ; [-1 0] ; [0 0]];
+    
+    p_windEffect = 0.25;
 
     % Matrix of Probability of being shot on every cell.
     P_BeingShot = ComputeProbabilityOfBeingShot(map);
-    
+      
     % Position of trees
     [trees_m, trees_n] = ind2sub(size(map), find(map==TREE));
     trees = [trees_m trees_n];
@@ -70,13 +72,14 @@ function G = ComputeStageCosts(stateSpace, map)
                 numberOfCrashMovements = 4 - numberOfPossibleCells;
 
                 for p = 1:numberOfPossibleCells
-                    p_shot = P_WIND*0.25*P_BeingShot(possibleCells(p));
-                    G(i,l) = G(i,l) +  Nc*p_shot;
+                    cell = possibleCells(p,:);
+                    p_shot = p_windEffect*P_WIND*P_BeingShot(cell(1),cell(2));
+                    G(i,l) = G(i,l) +  (Nc-1)*p_shot;
                 end
                 
                 G(i,l) = G(i,l) .... 
-                    + P_BeingShot(intended_cell(1), intended_cell(2)) ...
-                    + Nc*numberOfCrashMovements*P_WIND*0.25;
+                + (1-P_WIND)*(Nc-1)*P_BeingShot(intended_cell(1), intended_cell(2)) ...
+                + numberOfCrashMovements*(Nc - 1)*P_WIND*p_windEffect;
        
             end
         end   
