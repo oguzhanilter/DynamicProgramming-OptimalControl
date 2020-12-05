@@ -31,30 +31,30 @@ global K HOVER
 
 %% Handle terminal state
 % Do yo need to do something with the teminal state before starting policy
-% iteration ?
+% iteration ? --> Iterate over states expect the terminal state
 global TERMINAL_STATE_INDEX
 
+% initilizations
 J_opt       = zeros(K,1);
 costJnew    = zeros(K,1);
 u_opt_ind   = zeros(1,K);
 
+% inf causes problems
 G(G==inf) = 10e10;
 
+% Iterate over states expect the terminal state
 statesIndex = 1:K;
 statesIndex(TERMINAL_STATE_INDEX) = [];
-S_plus = statesIndex;
 
 % Termination criteria
 % Jk(i)-Jk+1(i) < termination_threshold 
 termination_threshold = 10e-5;
 costDiff = 1;
 
-iteration_count = 1;
-
 while(costDiff >= termination_threshold)
-    for s=1:length(S_plus)
-        i = S_plus(s);
-        [costJnew(i), u_opt_ind(i)] = min( G(i,:) + J_opt'*squeeze(P(i,:,:)) );
+    for s=1:length(statesIndex)
+        i = statesIndex(s);
+        [costJnew(i), u_opt_ind(i)] = min( G(i,:) + J_opt'*squeeze(P(i,:,:)));
     end
     costDiff = norm(costJnew - J_opt);
     J_opt = costJnew;    
