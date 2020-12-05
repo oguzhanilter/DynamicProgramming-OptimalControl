@@ -70,7 +70,11 @@ function G = ComputeStageCosts(stateSpace, map)
 
                 % Movements that might result crash due to wind    
                 numberOfCrashMovements = 4 - numberOfPossibleCells;
-
+                
+                % There is -1 --> (NC-1) because if it gets shots the total
+                % cost is 10 but at the beginning we set G(i,l) = 1 we need
+                % to subtract it. 
+                
                 for p = 1:numberOfPossibleCells
                     cell = possibleCells(p,:);
                     p_shot = p_windEffect*P_WIND*P_BeingShot(cell(1),cell(2));
