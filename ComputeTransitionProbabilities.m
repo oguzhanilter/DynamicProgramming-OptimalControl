@@ -265,14 +265,15 @@ global SHOOTER
 numberOfShooters = length(shooter_M);
 
 
-P_BeingShot = ones(map_M, map_N);
+P_BeingShot = zeros(map_M, map_N);
 for m = 1:map_M
     for n = 1:map_N
+        P_NotBeingShot = 1;
         for s = 1:numberOfShooters
-            P_BeingShot(m,n) = P_BeingShot(m,n)* ...
+            P_NotBeingShot = P_NotBeingShot* ...
                 (1-ProbabilityOfBeingShot([m,n],[shooter_M(s), shooter_N(s)]));               
         end
-        P_BeingShot(m,n) = 1 - P_BeingShot(m,n);
+        P_BeingShot(m,n) = 1 - P_NotBeingShot;
     end
 end
 
@@ -307,3 +308,4 @@ else
 end
 
 end
+
