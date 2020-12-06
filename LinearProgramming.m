@@ -32,11 +32,42 @@ global K HOVER
 
 %% Handle terminal state
 % Do yo need to do something with the teminal state before starting policy
-% iteration ?
+% iteration ? --> % Iterate over states except the terminal state
 global TERMINAL_STATE_INDEX
-% IMPORTANT: You can use the global variable TERMINAL_STATE_INDEX computed
-% in the ComputeTerminalStateIndex.m file (see main.m)
 
+% initilizations
+f           = -1*ones(K-1,1);
+u_opt_ind   = ones(1,K-1);
+
+% inf causes problems
+G(G==inf) = 10e10;
+
+% Exclude the terminal state
+G(TERMINAL_STATE_INDEX,:) = [];
+P(TERMINAL_STATE_INDEX,:,:) = [];
+P(:,TERMINAL_STATE_INDEX,:) = [];
+
+% Transform the problem to standart form of linear programming
+I = eye(K-1); A = []; b = [];
+for i = 1:size(P,3)
+    A = [A; I - P(:,:,i)];
+    b = [b; G(:,i)];
+end
+
+% MAGIC!
+J_opt = linprog(f,A,b);
+
+% The same algorithm from PI and LP to find optimal input
+for i=1:K-1
+    [~, u_opt_ind(i)] = min( G(i,:) + J_opt'*squeeze(P(i,:,:)) );
+end
+
+% Add the terminal state to J and U
+J_opt = [J_opt(1:TERMINAL_STATE_INDEX-1, :) ; 0 ; J_opt(TERMINAL_STATE_INDEX:end, :) ];
+u_opt_ind = [u_opt_ind(1:TERMINAL_STATE_INDEX-1)  HOVER  u_opt_ind(TERMINAL_STATE_INDEX:end) ];
+
+% The final touch
+u_opt_ind = u_opt_ind';
 
 end
 
