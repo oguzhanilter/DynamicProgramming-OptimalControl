@@ -62,7 +62,7 @@ function G = ComputeStageCosts(stateSpace, map)
             
             if(inputValid)
                 
-                G(i,l) = 1;
+                G(i,l) = 0;
                 
                 % possibleCells except the intended cell
                 possibleCells = FindPossibleCells(intended_cell, inputs, trees, bounds);
@@ -71,19 +71,17 @@ function G = ComputeStageCosts(stateSpace, map)
                 % Movements that might result crash due to wind    
                 numberOfCrashMovements = 4 - numberOfPossibleCells;
                 
-                % There is -1 --> (NC-1) because if it gets shots the total
-                % cost is 10 but at the beginning we set G(i,l) = 1 we need
-                % to subtract it. 
-                
                 for p = 1:numberOfPossibleCells
                     cell = possibleCells(p,:);
                     p_shot = p_windEffect*P_WIND*P_BeingShot(cell(1),cell(2));
-                    G(i,l) = G(i,l) +  (Nc-1)*p_shot;
+                    p_notshot = p_windEffect*P_WIND*(1-P_BeingShot(cell(1),cell(2)));
+                    G(i,l) = G(i,l) +  (Nc)*p_shot + 1*p_notshot;
                 end
                 
                 G(i,l) = G(i,l) .... 
-                + (1-P_WIND)*(Nc-1)*P_BeingShot(intended_cell(1), intended_cell(2)) ...
-                + numberOfCrashMovements*(Nc - 1)*P_WIND*p_windEffect;
+                + (1-P_WIND)*(Nc)*P_BeingShot(intended_cell(1), intended_cell(2)) ...
+                + (1-P_WIND)*(1)*(1-P_BeingShot(intended_cell(1), intended_cell(2))) ...
+                + numberOfCrashMovements*(Nc)*P_WIND*p_windEffect;
        
             end
         end   
