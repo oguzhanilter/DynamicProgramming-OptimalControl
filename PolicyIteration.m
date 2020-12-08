@@ -38,40 +38,39 @@ global TERMINAL_STATE_INDEX
 % initilizations
 J_opt       = zeros(K,1);
 costJnew    = zeros(K,1);
-u_opt_ind   = ones(1,K);
-
-% inf causes problems
-G(G==inf) = 10e10;
+u_opt_ind   = 5*ones(1,K);
+J_opt_previous = ones(K,1);
 
 % Iterate over states except the terminal state
 statesIndex = 1:K;
 statesIndex(TERMINAL_STATE_INDEX) = [];
 
 % Termination criteria
-% Jk(i)-Jk+1(i) < termination_threshold 
-termination_threshold = 10e-5;
-costDiff = 1;
+% Iterate between Stage 1 and 2 until Jµh+1(i) = Jµh(i)
+iterations=0;
+while(~isequal(J_opt_previous,J_opt))
 
-while(costDiff >= termination_threshold)
+    J_opt_previous = J_opt;  
+    
     for s=1:length(statesIndex)
         i = statesIndex(s);
-        b = squeeze(P(i,:,u_opt_ind(i)));
-        J_opt(i) = G(i,u_opt_ind(i)) + J_opt'*b';
+        P2(i,:) = P(i,:,u_opt_ind(i));
+        G2(i,1) = G(i,u_opt_ind(i));
     end
+    J_opt=(eye(size(J_opt,1))-P2)\G2;
     
     for s=1:length(statesIndex)
         i = statesIndex(s);
         [costJnew(i), u_opt_ind(i)] = min( G(i,:) + J_opt'*squeeze(P(i,:,:)) );
     end
 
-    costDiff = norm(costJnew - J_opt);
-    J_opt = costJnew;   
-    
+    iterations=iterations+1;
 end 
 
 % The final touch
 u_opt_ind(TERMINAL_STATE_INDEX) = HOVER;
 u_opt_ind  = u_opt_ind.';
+fprintf('    Number of iterations: %f\n',iterations);
 
 
 end
