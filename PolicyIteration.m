@@ -46,9 +46,14 @@ statesIndex = 1:K;
 statesIndex(TERMINAL_STATE_INDEX) = [];
 
 % Termination criteria
-% Iterate between Stage 1 and 2 until Jµh+1(i) = Jµh(i)
+% Iterate between Stage 1 and 2 until Jµh+1(i) = Jµh(i), using termination
+% creteria due to number irregularities in matlab
+termination_threshold = 10e-10;
+policyDiff = 1;
+
 iterations=0;
-while(~isequal(J_opt_previous,J_opt))
+%while(~isequal(J_opt_previous,J_opt))
+while(policyDiff >= termination_threshold)
 
     J_opt_previous = J_opt;  
     
@@ -61,10 +66,13 @@ while(~isequal(J_opt_previous,J_opt))
     
     for s=1:length(statesIndex)
         i = statesIndex(s);
-        [costJnew(i), u_opt_ind(i)] = min( G(i,:) + J_opt'*squeeze(P(i,:,:)) );
+        [~, u_opt_ind(i)] = min( G(i,:) + J_opt'*squeeze(P(i,:,:)) );
     end
-
+    
+    policyDiff = norm(J_opt_previous - J_opt);
     iterations=iterations+1;
+    %fprintf(' %.0f',iterations);
+
 end 
 
 % The final touch
